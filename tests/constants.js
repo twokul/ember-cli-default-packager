@@ -1,55 +1,55 @@
 const APPLICATION_TREE = {
   'addon-tree-output': {
     'ember-ajax': {
-      'request.js': '',
+      'request.js': '!',
     },
     'ember-cli-app-version': {
-      'initializer-factory.js': '',
+      'initializer-factory.js': '!',
     },
     'modules': {
       'ember-data': {
-        'transform.js': '',
-        'store.js': '',
+        'transform.js': '!',
+        'store.js': '!',
       },
     },
   },
   'the-best-app-ever': {
-    'router.js': 'router.js',
-    'app.js': 'app.js',
+    'router.js': 'THIS',
+    'app.js': 'IS',
     'components': {
-      'x-foo.js': 'x-foo.js',
+      'x-foo.js': 'MADNESS!',
     },
     'config': {
-      'environment.js': 'environment.js',
+      'environment.js': 'NO!',
     },
   },
   'vendor': {
     'loader': {
-      'loader.js': '',
+      'loader.js': 'W',
     },
     'ember': {
       'jquery': {
-        'jquery.js': '',
+        'jquery.js': 'O',
       },
-      'ember.debug.js': '',
+      'ember.debug.js': 'R',
     },
     'ember-cli': {
-      'app-boot.js': 'No man is an island,',
-      'app-config.js': 'Entire of itself.',
-      'app-prefix.js': 'Each is a piece of the continent,',
-      'app-suffix.js': 'A part of the main.',
+      'app-boot.js': '!!!',
+      'app-config.js': 'SPARTA',
+      'app-prefix.js': 'THIS',
+      'app-suffix.js': 'IS',
       'test-support-prefix.js': 'If a clod be washed away by the sea,',
       'test-support-suffix.js': 'Europe is the less.',
       'tests-prefix.js': 'As well as if a promontory were.',
       'tests-suffix.js': 'As well as if a manor of thine own',
-      'vendor-prefix.js': 'Or of thine friend\'s were.',
-      'vendor-suffix.js': 'Each man\'s death diminishes me,',
+      'vendor-prefix.js': 'HELLO',
+      'vendor-suffix.js': '!',
     },
     'ember-cli-shims': {
-      'app-shims.js': '',
+      'app-shims.js': 'L',
     },
     'ember-resolver': {
-      'legacy-shims.js': '',
+      'legacy-shims.js': 'D',
     },
   },
 };

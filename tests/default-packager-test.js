@@ -35,7 +35,7 @@ describe('Default Packager', function() {
   //  }).to.throw('You must pass a broccoli tree as an argument.');
   //});
 
-  it.only('should return an application broccoli tree', co.wrap(function* () {
+  it('should return an application broccoli tree', co.wrap(function* () {
     let appInstance = {
       name: 'the-best-app-ever',
       _scriptOutputFiles: {
@@ -72,11 +72,10 @@ describe('Default Packager', function() {
 
     const outputInfo = output.read();
 
-    expect(Object.keys(outputInfo)).to.deep.equal(['assets']);
-    expect(Object.keys(outputInfo.assets)).to.deep.equal([
-      'the-best-app-ever.js',
-      'vendor.js'
-    ]);
+    expect(outputInfo.assets).to.deep.equal({
+      'the-best-app-ever.js': 'THIS\nIS\nMADNESS!\nNO!\nTHIS\nIS\nSPARTA\n!!!',
+      'vendor.js': 'HELLO\n;W\n;O\n;R\n;L\n;D\n;!\n;!\n;!\n;!\n;!'
+    });
 
     applicationTree.dispose();
   }));

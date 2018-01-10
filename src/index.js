@@ -3,7 +3,12 @@
 const concat = require('broccoli-concat');
 const mergeTrees = require('broccoli-merge-trees');
 
+const APP_BOOT_FILE_PATH = 'vendor/ember-cli/app-boot.js';
+const APP_PREFIX_FILE_PATH = 'vendor/ember-cli/app-prefix.js';
+const APP_SUFFIX_FILE_PATH = 'vendor/ember-cli/app-suffix.js';
+const APP_CONFIG_FILE_PATH = 'vendor/ember-cli/app-config.js';
 const VENDOR_PREFIX_FILE_PATH = 'vendor/ember-cli/vendor-prefix.js';
+const VENDOR_SUFFIX_FILE_PATH = 'vendor/ember-cli/vendor-suffix.js';
 
 let DEFAULT_CONFIG = {
   storeConfigInMeta: true,
@@ -42,7 +47,10 @@ function isBroccoliTree(tree) {
 
 /*
   Creates an object with lists of files to be concatenated into `vendor.js` file.
+
   Given a map that looks like:
+
+  ```
   {
     'assets/vendor.js': [
       'vendor/ember-cli-shims/app-shims.js',
@@ -51,7 +59,11 @@ function isBroccoliTree(tree) {
       ...
     ]
   }
+  ```
+
   Produces an object that looks like:
+
+  ```
   {
     headerFiles: [
      'vendor/ember-cli/vendor-prefix.js',
@@ -69,6 +81,8 @@ function isBroccoliTree(tree) {
     ],
     annotation: 'Vendor JS'
   }
+  ```
+
   @private
   @method getVendorFiles
   @param {Object} files A list of files to include into `<file-name>.js`
@@ -79,10 +93,193 @@ function getVendorFiles(files, isMainVendorFile) {
   return {
     headerFiles: files,
     inputFiles: isMainVendorFile ? ['addon-tree-output/**/*.js'] : [],
-    footerFiles: isMainVendorFile ? ['vendor/ember-cli/vendor-suffix.js'] : [],
+    footerFiles: isMainVendorFile ? [VENDOR_SUFFIX_FILE_PATH] : [],
   };
 }
 
+/*
+  Concatenates all application's javascript Broccoli trees into one, as follows:
+
+  Given an input tree that looks like:
+
+  ```
+  addon-tree-output/
+    ember-ajax/
+    ember-data/
+    ember-engines/
+    ember-resolver/
+    ...
+  bower_components/
+    usertiming/
+    sinonjs/
+    ...
+  the-best-app-ever/
+    components/
+    config/
+    helpers/
+    routes/
+    ...
+  vendor/
+    ...
+    babel-core/
+    ...
+    broccoli-concat/
+    ...
+    ember-cli-template-lint/
+    ...
+  ```
+
+  Produces a tree that looks like:
+
+  ```
+  assets/
+    the-best-app-ever.js
+    the-best-app-ever.map (if sourcemaps are enabled)
+  ```
+
+  @method packageApplicationJs
+  @param {BroccoliTree} EmberApp broccoli tree
+  @param {Object} options
+  @return {BroccoliTree} Final Broccoli tree with application files.
+ */
+function packageApplicationJs(tree, options) {
+  return concat(tree, {
+    inputFiles: [`${options.name}/**/*.js`],
+    headerFiles: [
+      APP_PREFIX_FILE_PATH
+    ],
+    footerFiles: [
+      APP_SUFFIX_FILE_PATH,
+      APP_CONFIG_FILE_PATH,
+      APP_BOOT_FILE_PATH
+    ],
+    outputFile: options.outputFile,
+    annotation: 'Concat App',
+    sourceMapConfig: options.sourcemaps
+  });
+}
+
+/*
+  Concatenates all vendor's javascript Broccoli trees into one, as follows:
+
+  Given an input tree that looks like:
+
+  ```
+  addon-tree-output/
+    ember-ajax/
+    ember-data/
+    ember-engines/
+    ember-resolver/
+    ...
+  bower_components/
+    usertiming/
+    sinonjs/
+    ...
+  the-best-app-ever/
+    components/
+    config/
+    helpers/
+    routes/
+    ...
+  vendor/
+    ...
+    babel-core/
+    ...
+    broccoli-concat/
+    ...
+    ember-cli-template-lint/
+    ...
+  ```
+
+  Produces a tree that looks like:
+
+  ```
+  assets/
+    vendor.js
+    vendor.map (if sourcemaps are enabled)
+  ```
+
+  @method packageVendorJs
+  @param {BroccoliTree} EmberApp broccoli tree
+  @param {Object} options
+  @return {BroccoliTree} Final Broccoli tree with vendor files.
+ */
+function packageVendorJs(tree, options) {
+  let importPaths = Object.keys(options.outputFilesMap);
+
+  let packagedVendorJsTrees = importPaths.map(importPath => {
+    let vendorObject = getVendorFiles(
+      options.outputFilesMap[importPath],
+      importPath === DEFAULT_CONFIG.outputPaths.vendor.js
+    );
+
+    return concat(tree, {
+      inputFiles: vendorObject.inputFiles,
+      headerFiles: vendorObject.headerFiles,
+      footerFiles: vendorObject.footerFiles,
+      outputFile: importPath,
+      annotation: 'Vendor JS',
+      separator: '\n;',
+      sourceMapConfig: options.sourcemaps
+    });
+  });
+
+  return mergeTrees(packagedVendorJsTrees, {
+    annotation: 'Concat Vendor JS'
+  });
+}
+
+function prependVendorPrefixFileToVendorJs(map, path) {
+  map[path].unshift(VENDOR_PREFIX_FILE_PATH);
+}
+
+/*
+  Concatenates all application's javascript and vendor Broccoli trees into one, as follows:
+
+  Given an input tree that looks like:
+
+  ```
+  addon-tree-output/
+    ember-ajax/
+    ember-data/
+    ember-engines/
+    ember-resolver/
+    ...
+  bower_components/
+    usertiming/
+    sinonjs/
+    ...
+  the-best-app-ever/
+    components/
+    config/
+    helpers/
+    routes/
+    ...
+  vendor/
+    ...
+    babel-core/
+    ...
+    broccoli-concat/
+    ...
+    ember-cli-template-lint/
+    ...
+  ```
+
+  Produces a tree that looks like:
+
+  ```
+  assets/
+    the-best-app-ever.js
+    the-best-app-ever.map (if sourcemaps are enabled)
+    vendor.js
+    vendor.map (if sourcemaps are enabled)
+  ```
+
+  @method defaultPackager
+  @param {Object} EmberApp instance
+  @param {BroccoliTree} EmberApp broccoli tree
+  @return {BroccoliTree} Final Broccoli tree with application and vendor files.
+ */
 module.exports = function defaultPackager(appInstance, inputTree) {
   if (appInstance === undefined) {
     throw new Error('You must pass an application instance as an argument.');
@@ -96,51 +293,27 @@ module.exports = function defaultPackager(appInstance, inputTree) {
   //  throw new Error('You must pass a broccoli tree as an argument.');
   //}
 
-  let applicationJsOutputFilePath = appInstance.options.outputPaths.app.js;
-  let vendorJsOutputFilePath = appInstance.options.outputPaths.vendor.js;
+  prependVendorPrefixFileToVendorJs(
+    appInstance._scriptOutputFiles,
+    appInstance.options.outputPaths.vendor.js
+  );
 
-  appInstance._scriptOutputFiles[vendorJsOutputFilePath].unshift(VENDOR_PREFIX_FILE_PATH);
-
-  let packagedApplicationJsTree = concat(inputTree, {
-    inputFiles: [`${appInstance.name}/**/*.js`],
-    headerFiles: [
-      'vendor/ember-cli/app-prefix.js',
-    ],
-    footerFiles: [
-      'vendor/ember-cli/app-suffix.js',
-      'vendor/ember-cli/app-config.js',
-      'vendor/ember-cli/app-boot.js',
-    ],
-    outputFile: applicationJsOutputFilePath,
-    annotation: 'Concat App',
-    sourceMapConfig: appInstance.sourcemaps
+  let packagedApplicationJsTree = packageApplicationJs(inputTree, {
+    name: appInstance.name,
+    outputFile: appInstance.options.outputPaths.app.js,
+    sourcemaps: appInstance.sourcemaps
   });
 
-  let importPaths = Object.keys(appInstance._scriptOutputFiles);
-
-  let vendorTrees = importPaths.map(importPath => {
-    let vendorObject = getVendorFiles(
-      appInstance._scriptOutputFiles[importPath],
-      importPath === DEFAULT_CONFIG.outputPaths.vendor.js
-    );
-
-    return concat(inputTree, {
-      inputFiles: vendorObject.inputFiles,
-      headerFiles: vendorObject.headerFiles,
-      footerFiles: vendorObject.footerFiles,
-      outputFile: importPath,
-      annotation: 'Vendor JS',
-      separator: '\n;',
-      sourceMapConfig: appInstance.sourcemaps
-    });
+  let packagedVendorJsTree = packageVendorJs(inputTree, {
+    outputFilesMap: appInstance._scriptOutputFiles,
+    sourcemaps: appInstance.sourcemaps
   });
 
-  let packagedVendorJsTree;
-
-  let trees = vendorTrees.concat(packagedApplicationJsTree);
-
-  return mergeTrees(trees, {
+  return mergeTrees([
+    packagedApplicationJsTree,
+    packagedVendorJsTree
+  ], {
     overwrite: true,
-    annotation: 'Vendor & AppJs'
+    annotation: 'Vendor & AppJS'
   });
 };

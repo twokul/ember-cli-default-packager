@@ -35,36 +35,49 @@ describe('Default Packager', function() {
   //  }).to.throw('You must pass a broccoli tree as an argument.');
   //});
 
-  //it('should return an application broccoli tree', co.wrap(function* () {
-  //  let appInstance = {
-  //    name: 'the-best-app-ever',
-  //    _scriptOutputFiles: {},
-  //    sourcemaps: {
-  //      enabled: false
-  //    },
-  //    options: {
-  //      outputPaths: {
-  //        app: {
-  //          js: '/assets/the-best-app-ever.js'
-  //        },
-  //        vendor: {
-  //          js: '/assets/vendor.js'
-  //        }
-  //      }
-  //    }
-  //  };
-  //  let applicationTree = yield createTempDir();
+  it.only('should return an application broccoli tree', co.wrap(function* () {
+    let appInstance = {
+      name: 'the-best-app-ever',
+      _scriptOutputFiles: {
+        '/assets/vendor.js': [
+          'vendor/loader/loader.js',
+          'vendor/ember/jquery/jquery.js',
+          'vendor/ember/ember.debug.js',
+          'vendor/ember-cli-shims/deprecations.js',
+          'vendor/ember-cli-shims/app-shims.js',
+          'vendor/ember-resolver/legacy-shims.js'
+        ]
+      },
+      sourcemaps: {
+        enabled: false
+      },
+      options: {
+        outputPaths: {
+          app: {
+            js: '/assets/the-best-app-ever.js'
+          },
+          vendor: {
+            js: '/assets/vendor.js'
+          }
+        }
+      }
+    };
+    let applicationTree = yield createTempDir();
 
-  //  applicationTree.write(APPLICATION_TREE);
+    applicationTree.write(APPLICATION_TREE);
 
-  //  let packagedApplicationTree = defaultPackager(appInstance, applicationTree.path());
+    let packagedApplicationTree = defaultPackager(appInstance, applicationTree.path());
 
-  //  const output = yield buildOutput(packagedApplicationTree);
+    const output = yield buildOutput(packagedApplicationTree);
 
-  //  const outputInfo = output.read();
+    const outputInfo = output.read();
 
-  //  expect(Object.keys(outputInfo)).to.deep.equal([PACKAGED_APPLICATION_TREE]);
+    expect(Object.keys(outputInfo)).to.deep.equal(['assets']);
+    expect(Object.keys(outputInfo.assets)).to.deep.equal([
+      'the-best-app-ever.js',
+      'vendor.js'
+    ]);
 
-  //  applicationTree.dispose();
-  //}));
+    applicationTree.dispose();
+  }));
 });
